@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,6 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
         userController.getUsers().clear();
         user = User.builder()
                 .email("example@example.com")
