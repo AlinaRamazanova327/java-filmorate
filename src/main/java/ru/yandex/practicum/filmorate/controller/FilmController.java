@@ -30,7 +30,7 @@ public class FilmController {
     }
 
     @GetMapping
-    public Collection<Film> getFilms() {
+    public List<Film> getFilms() {
         return filmService.getFilms();
     }
 
