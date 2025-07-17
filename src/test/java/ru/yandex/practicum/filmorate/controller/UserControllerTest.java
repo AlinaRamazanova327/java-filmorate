@@ -12,14 +12,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -43,8 +43,6 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
-        userController.getUsers().clear();
         user = User.builder()
                 .email("example@example.com")
                 .login("login")
@@ -58,7 +56,7 @@ class UserControllerTest {
         assertEquals("example@example.com", createdUser.getEmail());
         assertEquals("login", createdUser.getLogin());
         assertEquals(LocalDate.of(1991, 1, 1), createdUser.getBirthday());
-        assertEquals(1, createdUser.getId());
+        assertTrue(createdUser.getId() > 0);
     }
 
     @Test

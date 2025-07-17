@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,8 +41,6 @@ class FilmControllerTest {
 
     @BeforeEach
     void setUp() {
-        filmController = new FilmController();
-        filmController.getFilms().clear();
         film = Film.builder()
                 .name("film")
                 .description("description")
@@ -57,7 +56,7 @@ class FilmControllerTest {
         assertEquals(147, result.getDuration());
         assertEquals("description", result.getDescription());
         assertEquals(LocalDate.of(2020, 2, 2), result.getReleaseDate());
-        assertEquals(1, result.getId());
+        assertTrue(result.getId() > 0);
     }
 
     @Test
