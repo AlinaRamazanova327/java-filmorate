@@ -89,15 +89,15 @@ public class UserDBStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(Long user_id, Long friend_id) {
+    public void addFriend(Long userId, Long friendId) {
         String sql = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql, user_id, friend_id);
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
-    public void removeFriend(Long user_id, Long friend_id) {
+    public void removeFriend(Long userId, Long friendId) {
         String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sql, user_id, friend_id);
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     public List<User> getCommonFriends(Long userId, Long otherId) {
