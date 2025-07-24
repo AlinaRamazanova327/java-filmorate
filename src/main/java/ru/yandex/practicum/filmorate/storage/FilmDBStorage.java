@@ -81,6 +81,7 @@ public class FilmDBStorage implements FilmStorage {
     public Film updateFilm(Film film) throws NotFoundException {
         validateMpaAndGenres(film);
         validateLikes(film);
+        checkIfFilmExists(film.getId());
 
         String sql = """
                 UPDATE films
@@ -103,6 +104,14 @@ public class FilmDBStorage implements FilmStorage {
         setFilmGenresIds(film.getId(), film.getGenres().stream().map(Genre::getId).collect(Collectors.toSet()).stream().toList());
         film.setMpa(mpaService.getMpaById(film.getMpa().getId()));
         return film;
+    }
+
+    private void checkIfFilmExists(Long filmId) throws NotFoundException {
+        String sql = "SELECT 1 FROM films WHERE id = ? LIMIT 1";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, filmId);
+        if (count == null || count == 0) {
+            throw new NotFoundException("Фильм с указанным ID не найден.");
+        }
     }
 
     @Override
