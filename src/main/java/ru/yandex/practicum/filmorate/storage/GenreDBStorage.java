@@ -19,7 +19,7 @@ public class GenreDBStorage implements GenreStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<Genre> GENRE_ROW_MAPPER =
+    private final RowMapper<Genre> genreRowMapper =
             ((rs, rowNum) -> Genre.builder()
                     .id(rs.getInt("id"))
                     .name(rs.getString("genre"))
@@ -28,14 +28,14 @@ public class GenreDBStorage implements GenreStorage {
     @Override
     public List<Genre> getAll() {
         String sql = "SELECT * FROM genres ORDER BY id";
-        return jdbcTemplate.query(sql, GENRE_ROW_MAPPER);
+        return jdbcTemplate.query(sql, genreRowMapper);
     }
 
     @Override
     public Optional<Genre> getById(int id) {
         String sql = "SELECT * FROM genres WHERE id = ?";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, GENRE_ROW_MAPPER, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, genreRowMapper, id));
         } catch (EmptyResultDataAccessException exception) {
             return Optional.empty();
         }

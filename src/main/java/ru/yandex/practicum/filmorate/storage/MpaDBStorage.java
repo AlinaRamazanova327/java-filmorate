@@ -19,7 +19,7 @@ public class MpaDBStorage implements MpaStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<Mpa> MPA_ROW_MAPPER =
+    private final RowMapper<Mpa> mpaRowMapper =
             ((rs, rowNum) -> Mpa.builder()
                     .id(rs.getInt("id"))
                     .name(rs.getString("name"))
@@ -28,14 +28,14 @@ public class MpaDBStorage implements MpaStorage {
     @Override
     public List<Mpa> getAll() {
         String sql = "SELECT * FROM mpa ORDER BY id";
-        return jdbcTemplate.query(sql, MPA_ROW_MAPPER);
+        return jdbcTemplate.query(sql, mpaRowMapper);
     }
 
     @Override
     public Optional<Mpa> getById(int id) {
         String sql = "SELECT * FROM mpa WHERE id = ?";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, MPA_ROW_MAPPER, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, mpaRowMapper, id));
         } catch (EmptyResultDataAccessException exception) {
             return Optional.empty();
         }

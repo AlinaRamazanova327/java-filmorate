@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Primary
 public class FilmDBStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<Film> FILM_ROW_MAPPER;
+    private final RowMapper<Film> filmRowMapper;
     private final MpaService mpaService;
     private final GenreService genreService;
 
@@ -34,7 +34,7 @@ public class FilmDBStorage implements FilmStorage {
         this.mpaService = mpaService;
         this.genreService = genreService;
 
-        FILM_ROW_MAPPER =
+        filmRowMapper =
                 ((rs, rowNum) -> Film.builder()
                         .id(rs.getLong("id"))
                         .name(rs.getString("name"))
@@ -108,14 +108,14 @@ public class FilmDBStorage implements FilmStorage {
     @Override
     public List<Film> getFilms() {
         String sql = "SELECT * FROM films";
-        return jdbcTemplate.query(sql, FILM_ROW_MAPPER);
+        return jdbcTemplate.query(sql, filmRowMapper);
     }
 
     @Override
     public Optional<Film> getFilmById(long filmId) {
         String sql = "SELECT * FROM films WHERE id = ?";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, FILM_ROW_MAPPER, filmId));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, filmRowMapper, filmId));
         } catch (EmptyResultDataAccessException exception) {
             return Optional.empty();
         }
@@ -236,6 +236,6 @@ public class FilmDBStorage implements FilmStorage {
                     ORDER BY COUNT(l.user_id) DESC
                     LIMIT ?
                 """;
-        return jdbcTemplate.query(sql, FILM_ROW_MAPPER, count);
+        return jdbcTemplate.query(sql, filmRowMapper, count);
     }
 }

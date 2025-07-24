@@ -24,7 +24,7 @@ public class UserDBStorage implements UserStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<User> USER_ROW_MAPPER =
+    private final RowMapper<User> userRowMapper =
             ((rs, rowNum) -> User.builder()
                     .id(rs.getLong("id"))
                     .login(rs.getString("login"))
@@ -64,14 +64,14 @@ public class UserDBStorage implements UserStorage {
     @Override
     public List<User> getUsers() {
         String sql = "SELECT * FROM users";
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     @Override
     public Optional<User> getUserById(Long id) {
         String sql = "SELECT * FROM users WHERE id = ?";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, id));
         } catch (EmptyResultDataAccessException exception) {
             return Optional.empty();
         }
@@ -85,7 +85,7 @@ public class UserDBStorage implements UserStorage {
                     JOIN users u ON f.friend_id = u.id
                     WHERE f.user_id = ?
                 """;
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, userId);
+        return jdbcTemplate.query(sql, userRowMapper, userId);
     }
 
     @Override
@@ -108,6 +108,6 @@ public class UserDBStorage implements UserStorage {
                     JOIN users u ON f1.friend_id = u.id
                     WHERE f1.user_id = ? AND f2.user_id = ?
                 """;
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, userId, otherId);
+        return jdbcTemplate.query(sql, userRowMapper, userId, otherId);
     }
 }
