@@ -11,8 +11,7 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Builder(toBuilder = true)
 @AllArgsConstructor
@@ -27,11 +26,30 @@ public class Film {
     LocalDate releaseDate;
     @Positive(message = "продолжительность фильма должна быть положительным числом")
     int duration;
-    Set<Long> likes;
+    List<Long> likes;
+    Mpa mpa;
+    List<Integer> genresIds;
+    List<Genre> genres; // По умолчанию создаём пустую коллекцию
 
-    public Set<Long> getLikes() {
+    public List<Integer> getGenresIds() {
+        return genresIds != null ? genresIds : Collections.emptyList(); // Всегда возвращаем непустой объект
+    }
+
+    public void setGenresIds(List<Integer> genresIds) {
+        this.genresIds = genresIds != null ? genresIds : new ArrayList<>();
+    }
+
+    public List<Genre> getGenres() {
+        return genres != null ? genres : Collections.emptyList(); // Всегда возвращаем непустой объект
+    }
+
+    public void setGenres(List<Genre> genres) {
+        this.genres = genres != null ? genres : new ArrayList<>();
+    }
+
+    public List<Long> getLikes() {
         if (likes == null) {
-            this.likes = new HashSet<>();
+            this.likes = new ArrayList<>();
         }
         return likes;
     }

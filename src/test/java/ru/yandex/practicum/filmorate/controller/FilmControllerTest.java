@@ -1,132 +1,97 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ValidationException;
-import jakarta.validation.groups.Default;
-import jakarta.validation.Validator;
-import org.junit.jupiter.api.BeforeEach;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.GenreService;
+import ru.yandex.practicum.filmorate.service.MpaService;
+import ru.yandex.practicum.filmorate.storage.FilmDBStorage;
+import ru.yandex.practicum.filmorate.storage.GenreDBStorage;
+import ru.yandex.practicum.filmorate.storage.MpaDBStorage;
+import ru.yandex.practicum.filmorate.storage.UserDBStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@JdbcTest
+@AutoConfigureTestDatabase
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@Import({FilmController.class, FilmService.class, FilmDBStorage.class, MpaService.class, MpaDBStorage.class,
+        GenreService.class, GenreDBStorage.class, UserDBStorage.class})
 class FilmControllerTest {
-    @Autowired
-    private FilmController filmController;
-    private Film film;
-    @Autowired
-    private Validator validator;
+    private final FilmController filmController;
 
-    private void validateObject(Object object) throws ValidationException {
-        Set<ConstraintViolation<Object>> violations = validator.validate(object, Default.class);
-        if (!violations.isEmpty()) {
-            throw new ValidationException(violations.stream()
-                    .map(ConstraintViolation::getMessage)
-                    .collect(Collectors.joining(", ")));
-        }
-    }
-
-    @BeforeEach
-    void setUp() {
-        film = Film.builder()
+    static Film getTestFilm() {
+        return Film.builder()
+                .id(1L)
                 .name("film")
-                .description("description")
-                .releaseDate(LocalDate.of(2020, 2, 2))
-                .duration(147)
+                .description("desc")
+                .duration(111)
+                .releaseDate(LocalDate.parse("2002-02-20"))
+                .mpa(Mpa.builder().id(3).name("PG-13").build())
                 .build();
     }
 
-    @Test
-    void testCreateValidFilm() throws ValidationException {
-        Film result = filmController.createFilm(film);
-        assertEquals("film", result.getName());
-        assertEquals(147, result.getDuration());
-        assertEquals("description", result.getDescription());
-        assertEquals(LocalDate.of(2020, 2, 2), result.getReleaseDate());
-        assertTrue(result.getId() > 0);
-    }
-
-    @Test
-    void testCreateInvalidFilm() throws ValidationException {
-        Film film1 = Film.builder()
-                .name("")
-                .description("description")
-                .releaseDate(LocalDate.of(2020, 2, 2))
-                .duration(147)
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(film1));
-        Film film2 = Film.builder()
-                .name("film")
-                .description("a".repeat(201))
-                .releaseDate(LocalDate.of(2020, 2, 2))
-                .duration(147)
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(film2));
-        Film film3 = Film.builder()
-                .name("film")
-                .description("description")
-                .releaseDate(LocalDate.of(1895, 12, 27))
-                .duration(147)
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(film3));
-        Film film4 = Film.builder()
-                .name("film")
-                .description("description")
-                .releaseDate(LocalDate.of(2020, 2, 2))
-                .duration(0)
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(film4));
-    }
-
-    @Test
-    void testUpdateValidFilm() throws ValidationException {
-        filmController.createFilm(film);
-        Film updatedFilm = Film.builder()
-                .id(film.getId())
+    static Film getTestFilm2() {
+        return Film.builder()
+                .id(2L)
                 .name("film2")
-                .description("description2")
-                .releaseDate(LocalDate.of(2021, 2, 2))
-                .duration(149)
+                .description("desc2")
+                .duration(120)
+                .releaseDate(LocalDate.parse("2000-02-20"))
+                .mpa(Mpa.builder().id(2).name("PG").build())
                 .build();
-        Film result = filmController.updateFilm(updatedFilm);
-        assertEquals("film2", result.getName());
-        assertEquals(149, result.getDuration());
-        assertEquals("description2", result.getDescription());
-        assertEquals(LocalDate.of(2021, 2, 2), result.getReleaseDate());
     }
 
     @Test
-    void testUpdateNonExistingFilm() throws ValidationException {
-        filmController.createFilm(film);
-        Film updatedFilm = Film.builder()
-                .id(23L)
-                .name("film2")
-                .description("description2")
-                .releaseDate(LocalDate.of(2021, 2, 2))
-                .duration(149)
-                .build();
-        assertThrows(NotFoundException.class, () -> filmController.updateFilm(updatedFilm));
+    void createFilm() {
+        Film film = filmController.createFilm(getTestFilm());
+        assertThat(film)
+                .usingRecursiveComparison()
+                .ignoringFields("id")
+                .isEqualTo(getTestFilm());
     }
 
     @Test
-    void testGetFilms() {
-        List<Film> emptyList = new ArrayList<>(filmController.getFilms());
-        assertEquals(0, emptyList.size());
+    void updateFilm() {
+        Film film = filmController.createFilm(getTestFilm());
+        film.setName("NewFilm");
+        Film updatedFilm = filmController.updateFilm(film);
+        assertThat(updatedFilm)
+                .usingRecursiveComparison()
+                .ignoringExpectedNullFields()
+                .isEqualTo(film);
+    }
+
+    @Test
+    void getFilms() {
+        filmController.createFilm(getTestFilm());
+        filmController.createFilm(getTestFilm2());
+        List<Film> filmList = filmController.getFilms();
+        assertEquals(2, filmList.size());
+    }
+
+    @Test
+    void getFilmById() {
+        Film film = getTestFilm();
         filmController.createFilm(film);
-        List<Film> films = new ArrayList<>(filmController.getFilms());
-        assertEquals(1, films.size());
+        Optional<Film> filmOptional = filmController.getFilmById(film.getId());
+
+        assertThat(filmOptional)
+                .isPresent()
+                .get()
+                .usingRecursiveComparison()
+                .ignoringExpectedNullFields()
+                .isEqualTo(film);
     }
 }

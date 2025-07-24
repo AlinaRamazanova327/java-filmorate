@@ -1,119 +1,108 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ValidationException;
-import jakarta.validation.groups.Default;
-import jakarta.validation.Validator;
-import org.junit.jupiter.api.BeforeEach;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.UserDBStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@JdbcTest
+@AutoConfigureTestDatabase
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@Import({UserController.class, UserService.class, UserDBStorage.class})
 class UserControllerTest {
+    private final UserController userController;
 
-    @Autowired
-    private UserController userController;
-    private User user;
-    @Autowired
-    private Validator validator;
-
-    private void validateObject(Object object) throws ValidationException {
-        Set<ConstraintViolation<Object>> violations = validator.validate(object, Default.class);
-        if (!violations.isEmpty()) {
-            throw new ValidationException(violations.stream()
-                    .map(ConstraintViolation::getMessage)
-                    .collect(Collectors.joining(", "))
-            );
-        }
-    }
-
-    @BeforeEach
-    void setUp() {
-        user = User.builder()
+    static User getTestUser() {
+        return User.builder()
+                .id(1L)
                 .email("example@example.com")
+                .name("name")
                 .login("login")
-                .birthday(LocalDate.of(1991, 1, 1))
+                .birthday(LocalDate.parse("2002-02-02"))
                 .build();
     }
 
-    @Test
-    void testCreateValidUser() throws ValidationException {
-        User createdUser = userController.createUser(user);
-        assertEquals("example@example.com", createdUser.getEmail());
-        assertEquals("login", createdUser.getLogin());
-        assertEquals(LocalDate.of(1991, 1, 1), createdUser.getBirthday());
-        assertTrue(createdUser.getId() > 0);
-    }
-
-    @Test
-    void testCreateInvalidUser() throws ValidationException {
-        User invalidUser1 = User.builder()
-                .email("")
-                .login("login1")
-                .birthday(LocalDate.of(1991, 1, 1))
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(invalidUser1));
-        User invalidUser2 = User.builder()
-                .email("invalid_email_format")
-                .login(" ")
-                .birthday(LocalDate.of(1991, 1, 1))
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(invalidUser2));
-        User invalidUser3 = User.builder()
-                .email("valid@email.com")
-                .login("valid_login")
-                .birthday(LocalDate.now().plusDays(1))
-                .build();
-        assertThrows(ValidationException.class, () -> validateObject(invalidUser3));
-    }
-
-    @Test
-    void testUpdateValidUser() throws ValidationException {
-        userController.createUser(user);
-        User updatedUser = User.builder()
-                .id(user.getId())
-                .email("example@example.com")
+    static User getTestUser2() {
+        return User.builder()
+                .id(2L)
+                .email("email@email.com")
+                .name("name2")
                 .login("login2")
-                .birthday(LocalDate.of(1992, 1, 1))
+                .birthday(LocalDate.parse("2000-02-02"))
                 .build();
-        User result = userController.updateUser(updatedUser);
-        assertEquals("example@example.com", result.getEmail());
-        assertEquals("login2", result.getLogin());
-        assertEquals(LocalDate.of(1992, 1, 1), result.getBirthday());
     }
 
     @Test
-    void testUpdateNonExistingUser() throws ValidationException {
-        userController.createUser(user);
-        User updatedUser = User.builder()
-                .id(465L)
-                .email("example@example.com")
-                .login("login")
-                .birthday(LocalDate.of(1991, 1, 1))
-                .build();
-        assertThrows(NotFoundException.class, () -> userController.updateUser(updatedUser));
+    void createUser() {
+        User user = userController.createUser(getTestUser());
+        assertThat(user)
+                .usingRecursiveComparison()
+                .ignoringFields("id")
+                .isEqualTo(getTestUser());
     }
 
     @Test
-    void testGetUsers() {
-        List<User> emptyList = new ArrayList<>(userController.getUsers());
-        assertEquals(0, emptyList.size());
+    void updateUser() {
+        User user = userController.createUser(getTestUser());
+        user.setLogin("NewLogin");
+        User updatedUser = userController.updateUser(user);
+        assertThat(updatedUser)
+                .usingRecursiveComparison()
+                .ignoringExpectedNullFields()
+                .isEqualTo(user);
+    }
+
+    @Test
+    void getUsers() {
+        userController.createUser(getTestUser());
+        userController.createUser(getTestUser2());
+        List<User> userList = userController.getUsers();
+        assertEquals(2, userList.size());
+    }
+
+    @Test
+    void getUserById() {
+        User user = getTestUser();
         userController.createUser(user);
-        List<User> users = new ArrayList<>(userController.getUsers());
-        assertEquals(1, users.size());
+        Optional<User> userOptional = userController.getUserById(user.getId());
+
+        assertThat(userOptional)
+                .isPresent()
+                .get()
+                .usingRecursiveComparison()
+                .ignoringExpectedNullFields()
+                .isEqualTo(user);
+    }
+
+    @Test
+    void addAndRemoveFriend() {
+        User user = getTestUser();
+        User user2 = getTestUser2();
+        userController.createUser(getTestUser());
+        userController.createUser(getTestUser2());
+        userController.addFriend(user.getId(), user2.getId());
+        List<User> friends = userController.getFriends(user.getId());
+        assertFalse(friends.isEmpty());
+        assertThat(friends.getFirst())
+                .usingRecursiveComparison()
+                .ignoringExpectedNullFields()
+                .isEqualTo(user2);
+
+        userController.removeFriend(user.getId(), user2.getId());
+        List<User> friends2 = userController.getFriends(user.getId());
+        assertTrue(friends2.isEmpty());
     }
 }

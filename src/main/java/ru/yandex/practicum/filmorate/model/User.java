@@ -10,8 +10,8 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Builder(toBuilder = true)
 @AllArgsConstructor
@@ -27,11 +27,11 @@ public class User {
     String name;
     @PastOrPresent(message = "дата рождения не может быть в будущем")
     LocalDate birthday;
-    Set<Long> friends;
+    List<User> friends;
 
-    public Set<Long> getFriends() {
+    public List<User> getFriends() {
         if (friends == null) {
-            this.friends = new HashSet<>();
+            this.friends = new ArrayList<>();
         }
         return friends;
     }

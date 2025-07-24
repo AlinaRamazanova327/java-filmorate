@@ -20,7 +20,9 @@ public class UserService {
     }
 
     public User updateUser(User user) throws NotFoundException {
-        return userStorage.updateUser(user);
+        return getUserById(user.getId())
+                .map(u -> userStorage.updateUser(user))
+                .orElseThrow(() -> new NotFoundException("Пользователь с указанным id не найден"));
     }
 
     public List<User> getUsers() {
@@ -28,7 +30,8 @@ public class UserService {
     }
 
     public Optional<User> getUserById(Long id) {
-        return userStorage.getUserById(id);
+        return Optional.ofNullable(userStorage.getUserById(id).orElseThrow(() ->
+                new NotFoundException("Пользователь с указанным id не найден")));
     }
 
     public void addFriend(Long userId, Long friendId) {
@@ -37,8 +40,7 @@ public class UserService {
         User friend = getUserById(friendId).orElseThrow(() ->
                 new NotFoundException("Пользователь с указанным id не найден"));
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        userStorage.addFriend(userId, friendId);
     }
 
     public void removeFriend(Long userId, Long friendId) {
@@ -47,30 +49,22 @@ public class UserService {
         User friend = getUserById(friendId).orElseThrow(() ->
                 new NotFoundException("Пользователь с указанным id не найден"));
 
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        userStorage.removeFriend(userId, friendId);
     }
 
     public List<User> getUserFriends(Long userId) {
         User user = getUserById(userId).orElseThrow(() ->
                 new NotFoundException("Пользователь с указанным id не найден"));
 
-        return user.getFriends().stream()
-                .map(userStorage::getUserById)
-                .flatMap(Optional::stream)
-                .toList();
+        return userStorage.getFriends(userId);
     }
 
-    public List<User> getCommonFriends(Long userId, Long otherId) {
+    public List<User> getCommonFriends(Long userId, Long friendId) {
         User user = getUserById(userId).orElseThrow(() ->
                 new NotFoundException("Пользователь с указанным id не найден"));
-        User friend = getUserById(otherId).orElseThrow(() ->
+        User friend = getUserById(friendId).orElseThrow(() ->
                 new NotFoundException("Пользователь с указанным id не найден"));
 
-        return user.getFriends().stream()
-                .filter(friend.getFriends()::contains)
-                .map(userStorage::getUserById)
-                .flatMap(Optional::stream)
-                .toList();
+        return userStorage.getCommonFriends(userId, friendId);
     }
 }
